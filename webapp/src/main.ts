@@ -23,7 +23,8 @@ function initializeMap(): void {
     container: 'map',
     style: 'https://demotiles.maplibre.org/style.json',
     center: [DEFAULT_LOCATION.lng, DEFAULT_LOCATION.lat],
-    zoom: DEFAULT_LOCATION.zoom
+    zoom: DEFAULT_LOCATION.zoom,
+    maxBounds: [[-10.0, 35.0], [5.0, 44.0]] // Limit view to Spain
   });
 
   map.addControl(new maplibregl.NavigationControl());
@@ -42,6 +43,7 @@ function initializeMap(): void {
 // Load the GeoJSON data
 async function loadGeoJSONData(): Promise<void> {
   try {
+    showLoading(true);
     const response = await fetch(DATA_PATH);
     if (!response.ok) {
       throw new Error('Failed to load GeoJSON data');
@@ -50,14 +52,31 @@ async function loadGeoJSONData(): Promise<void> {
     geojsonData = await response.json() as FeatureCollection;
     console.log('GeoJSON data loaded successfully:', geojsonData.features.length, 'features');
     
+    // Check if the GeoJSON has valid geometry
+    if (geojsonData.features.length > 0) {
+      const sampleFeature = geojsonData.features[0];
+      console.log('Sample feature geometry:', sampleFeature.geometry);
+      console.log('Sample feature properties:', sampleFeature.properties);
+    }
+    
     processData();
     addDataToMap();
     populateFilters();
     setupEventListeners();
+    showLoading(false);
     
   } catch (error) {
     console.error('Error loading GeoJSON data:', error);
     alert('Failed to load map data. Please try again later.');
+    showLoading(false);
+  }
+}
+
+// Show or hide loading indicator
+function showLoading(show: boolean): void {
+  const loadingElement = document.getElementById('loading');
+  if (loadingElement) {
+    loadingElement.style.display = show ? 'flex' : 'none';
   }
 }
 
@@ -100,10 +119,16 @@ function processData(): void {
 function addDataToMap(): void {
   if (!geojsonData || !map) return;
 
+  // Remove existing layers if they exist
+  if (map.getLayer('sections-fill')) map.removeLayer('sections-fill');
+  if (map.getLayer('sections-outline')) map.removeLayer('sections-outline');
+  if (map.getSource('sections')) map.removeSource('sections');
+
   // Add source
   map.addSource('sections', {
     type: 'geojson',
-    data: geojsonData
+    data: geojsonData,
+    generateId: true
   });
 
   // Add fill layer
@@ -116,17 +141,16 @@ function addDataToMap(): void {
         'case',
         ['has', 'vivienda turistica'],
         [
-          'interpolate',
-          ['linear'],
+          'step',
           ['to-number', ['get', 'vivienda turistica']],
-          0, '#f7fbff',
-          1, '#deebf7',
-          5, '#c6dbef',
-          10, '#9ecae1',
-          50, '#6baed6',
-          100, '#4292c6',
-          200, '#2171b5',
-          500, '#084594'
+          '#f7fbff',  // 0
+          1, '#deebf7',  // 1-4
+          5, '#c6dbef',  // 5-9
+          10, '#9ecae1', // 10-49
+          50, '#6baed6', // 50-99
+          100, '#4292c6', // 100-199
+          200, '#2171b5', // 200-499
+          500, '#084594'  // 500+
         ],
         '#e5e5e5'  // Default color if no data
       ],
@@ -141,8 +165,15 @@ function addDataToMap(): void {
     source: 'sections',
     paint: {
       'line-color': '#000',
-      'line-width': 0.5,
-      'line-opacity': 0.5
+      'line-width': [
+        'interpolate',
+        ['linear'],
+        ['zoom'],
+        5, 0.1,  // Thin lines at low zoom
+        8, 0.5,  // Medium lines at medium zoom
+        12, 1    // Thicker lines at high zoom
+      ],
+      'line-opacity': 0.3
     }
   });
 

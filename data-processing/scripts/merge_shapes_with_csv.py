@@ -8,6 +8,15 @@ shapefile_path = "../../data/input/seccionado_2024/SECC_CE_20240101.shp"
 gdf = gpd.read_file(shapefile_path)
 print(f"Shapefile loaded with {len(gdf)} rows")
 
+# Check the CRS (Coordinate Reference System)
+print(f"Original CRS: {gdf.crs}")
+
+# If not already in WGS84 (EPSG:4326), convert to it for web mapping
+if gdf.crs != "EPSG:4326":
+    print("Converting to WGS84 (EPSG:4326) for web mapping...")
+    gdf = gdf.to_crs("EPSG:4326")
+    print(f"New CRS: {gdf.crs}")
+
 # Read the CSV file with Polars
 print("Reading CSV file...")
 csv_file = "../../data/input/secciones.csv"
@@ -29,6 +38,10 @@ print(f"Merged data has {len(merged_gdf)} rows")
 # Check for unmatched rows
 unmatched_count = merged_gdf['vivienda turistica'].isna().sum()
 print(f"Number of shapefile rows without matching CSV data: {unmatched_count}")
+
+# Simplify geometries to reduce file size for web use (tolerance in degrees)
+print("Simplifying geometries for web use...")
+merged_gdf['geometry'] = merged_gdf['geometry'].simplify(tolerance=0.0001)
 
 # Save the merged data as a new shapefile
 output_shapefile = "../../data/output/secciones_with_shapes.shp"
