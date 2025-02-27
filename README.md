@@ -68,6 +68,47 @@ npm run preview
 
 The application should now be available at http://localhost:3000/
 
+## Cloudflare R2 Integration (Optional)
+
+For production deployments, we recommend storing the GeoJSON data in Cloudflare R2 instead of including it in the repository. This allows for:
+
+1. Handling large GeoJSON files that exceed Git's file size limits
+2. Better performance when serving large files
+3. Separation of code and data concerns
+
+### Setting Up R2 Integration
+
+1. Create a Cloudflare R2 bucket in your Cloudflare dashboard
+2. Generate R2 API tokens with appropriate permissions
+3. Run the setup script:
+
+```bash
+./setup_r2.sh
+```
+
+4. Edit the `.env` file with your Cloudflare R2 credentials:
+
+```
+R2_ENDPOINT=https://<account_id>.r2.cloudflarestorage.com
+R2_ACCESS_KEY_ID=<your_access_key_id>
+R2_SECRET_ACCESS_KEY=<your_secret_access_key>
+R2_BUCKET_NAME=<your_bucket_name>
+R2_PUBLIC_URL=<public_url_to_access_files>
+```
+
+5. Process and upload the data:
+
+```bash
+cd data-processing/scripts
+uv run merge_shapes_with_csv.py
+```
+
+The script will:
+- Generate the GeoJSON file locally
+- Upload it to Cloudflare R2
+- Create a configuration file with the R2 URL
+- The web application will automatically use the R2 URL when available
+
 ## Important Note About Running Python Scripts
 
 Always use `uv` to run Python scripts in this project for faster execution and better dependency management:

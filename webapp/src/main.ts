@@ -2,7 +2,9 @@ import * as maplibregl from 'maplibre-gl';
 import { FeatureCollection, Feature, FilterOptions } from './types/types';
 
 // Define constants
-const DATA_PATH = '/data/output/secciones_with_shapes.geojson';
+const LOCAL_DATA_PATH = '/data/output/secciones_with_shapes.geojson';
+const CONFIG_PATH = '/data-config.json';
+let DATA_PATH = LOCAL_DATA_PATH; // Will be updated if R2 URL is available
 const DEFAULT_LOCATION = { lng: -3.7033, lat: 40.4167, zoom: 5 }; // Spain
 
 // State
@@ -16,6 +18,33 @@ let currentFilters: FilterOptions = {
   province: 'all',
   municipality: 'all'
 };
+
+// Load config and update data path
+async function loadConfig(): Promise<void> {
+  try {
+    const response = await fetch(CONFIG_PATH);
+    if (response.ok) {
+      const config = await response.json();
+      if (config.dataUrl) {
+        console.log(`Using remote data URL from config: ${config.dataUrl}`);
+        DATA_PATH = config.dataUrl;
+        
+        // Show last updated info if available
+        if (config.lastUpdated) {
+          const lastUpdated = new Date(config.lastUpdated);
+          console.log(`Data last updated: ${lastUpdated.toLocaleString()}`);
+        }
+      } else {
+        console.log(`Config file found but no dataUrl specified, using local path: ${LOCAL_DATA_PATH}`);
+      }
+    } else {
+      console.log(`Could not load config file, using local path: ${LOCAL_DATA_PATH}`);
+    }
+  } catch (error) {
+    console.error('Error loading config:', error);
+    console.log(`Falling back to local data path: ${LOCAL_DATA_PATH}`);
+  }
+}
 
 // Initialize the map
 function initializeMap(): void {
@@ -82,9 +111,16 @@ function addRegionNavigationControls(): void {
 async function loadGeoJSONData(): Promise<void> {
   try {
     showLoading(true);
+    console.log('Attempting to load GeoJSON data from:', DATA_PATH);
+    
     const response = await fetch(DATA_PATH);
+    console.log('Fetch response status:', response.status, response.statusText);
+    
     if (!response.ok) {
-      throw new Error('Failed to load GeoJSON data');
+      const errorText = await response.text();
+      console.error('Failed to load GeoJSON data:', response.status, response.statusText);
+      console.error('Error details:', errorText);
+      throw new Error(`Failed to load GeoJSON data: ${response.status} ${response.statusText}`);
     }
     
     geojsonData = await response.json() as FeatureCollection;
@@ -95,6 +131,8 @@ async function loadGeoJSONData(): Promise<void> {
       const sampleFeature = geojsonData.features[0];
       console.log('Sample feature geometry:', sampleFeature.geometry);
       console.log('Sample feature properties:', sampleFeature.properties);
+    } else {
+      console.warn('No features found in the GeoJSON data!');
     }
     
     processData();
@@ -103,10 +141,29 @@ async function loadGeoJSONData(): Promise<void> {
     setupEventListeners();
     showLoading(false);
     
-  } catch (error) {
+  } catch (error: any) {
     console.error('Error loading GeoJSON data:', error);
     alert('Failed to load map data. Please try again later.');
     showLoading(false);
+    
+    // Display error on the page
+    const errorElement = document.createElement('div');
+    errorElement.style.position = 'absolute';
+    errorElement.style.top = '50%';
+    errorElement.style.left = '50%';
+    errorElement.style.transform = 'translate(-50%, -50%)';
+    errorElement.style.backgroundColor = 'rgba(255, 0, 0, 0.1)';
+    errorElement.style.color = 'red';
+    errorElement.style.padding = '20px';
+    errorElement.style.borderRadius = '5px';
+    errorElement.style.maxWidth = '80%';
+    errorElement.style.textAlign = 'center';
+    errorElement.innerHTML = `
+      <h3>Error Loading Map Data</h3>
+      <p>${error.message || 'Unknown error occurred'}</p>
+      <p>Please check your internet connection and try again.</p>
+    `;
+    document.querySelector('.map')?.appendChild(errorElement);
   }
 }
 
@@ -499,6 +556,9 @@ function setupEventListeners(): void {
 }
 
 // Initialize the application
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+  // First load config to get the data URL
+  await loadConfig();
+  // Then initialize the map
   initializeMap();
 }); 
