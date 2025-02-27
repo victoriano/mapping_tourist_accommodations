@@ -24,7 +24,6 @@ function initializeMap(): void {
     style: 'https://demotiles.maplibre.org/style.json',
     center: [DEFAULT_LOCATION.lng, DEFAULT_LOCATION.lat],
     zoom: DEFAULT_LOCATION.zoom,
-    maxBounds: [[-10.0, 35.0], [5.0, 44.0]] // Limit view to Spain
   });
 
   map.addControl(new maplibregl.NavigationControl());
@@ -35,9 +34,48 @@ function initializeMap(): void {
     trackUserLocation: true
   }));
 
+  // Add region navigation controls
+  addRegionNavigationControls();
+
   map.on('load', () => {
     loadGeoJSONData();
   });
+}
+
+// Add custom controls for navigating to specific regions of Spain
+function addRegionNavigationControls(): void {
+  const controlContainer = document.createElement('div');
+  controlContainer.className = 'map-region-controls';
+  
+  // Button for mainland Spain
+  const mainlandButton = document.createElement('button');
+  mainlandButton.className = 'region-button';
+  mainlandButton.textContent = 'Mainland Spain';
+  mainlandButton.addEventListener('click', () => {
+    map.flyTo({
+      center: [-3.7033, 40.4167],
+      zoom: 5,
+      duration: 1500
+    });
+  });
+  
+  // Button for Canary Islands
+  const canaryButton = document.createElement('button');
+  canaryButton.className = 'region-button';
+  canaryButton.textContent = 'Canary Islands';
+  canaryButton.addEventListener('click', () => {
+    map.flyTo({
+      center: [-15.5, 28.1],
+      zoom: 7,
+      duration: 1500
+    });
+  });
+  
+  controlContainer.appendChild(mainlandButton);
+  controlContainer.appendChild(canaryButton);
+  
+  // Append the control container to the map
+  document.querySelector('.map')?.appendChild(controlContainer);
 }
 
 // Load the GeoJSON data
