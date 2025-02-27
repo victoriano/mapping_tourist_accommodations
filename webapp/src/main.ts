@@ -104,7 +104,10 @@ function addRegionNavigationControls(): void {
   controlContainer.appendChild(canaryButton);
   
   // Append the control container to the map
-  document.querySelector('.map')?.appendChild(controlContainer);
+  const mapElement = document.querySelector('.map') || document.getElementById('map');
+  if (mapElement) {
+    mapElement.appendChild(controlContainer);
+  }
 }
 
 // Load the GeoJSON data
@@ -143,27 +146,32 @@ async function loadGeoJSONData(): Promise<void> {
     
   } catch (error: any) {
     console.error('Error loading GeoJSON data:', error);
-    alert('Failed to load map data. Please try again later.');
     showLoading(false);
     
-    // Display error on the page
-    const errorElement = document.createElement('div');
-    errorElement.style.position = 'absolute';
-    errorElement.style.top = '50%';
-    errorElement.style.left = '50%';
-    errorElement.style.transform = 'translate(-50%, -50%)';
-    errorElement.style.backgroundColor = 'rgba(255, 0, 0, 0.1)';
-    errorElement.style.color = 'red';
-    errorElement.style.padding = '20px';
-    errorElement.style.borderRadius = '5px';
-    errorElement.style.maxWidth = '80%';
-    errorElement.style.textAlign = 'center';
-    errorElement.innerHTML = `
-      <h3>Error Loading Map Data</h3>
-      <p>${error.message || 'Unknown error occurred'}</p>
-      <p>Please check your internet connection and try again.</p>
-    `;
-    document.querySelector('.map')?.appendChild(errorElement);
+    // Display error on the page - ensure the map element exists first
+    const mapElement = document.querySelector('.map') || document.getElementById('map');
+    if (mapElement) {
+      const errorElement = document.createElement('div');
+      errorElement.style.position = 'absolute';
+      errorElement.style.top = '50%';
+      errorElement.style.left = '50%';
+      errorElement.style.transform = 'translate(-50%, -50%)';
+      errorElement.style.backgroundColor = 'rgba(255, 0, 0, 0.1)';
+      errorElement.style.color = 'red';
+      errorElement.style.padding = '20px';
+      errorElement.style.borderRadius = '5px';
+      errorElement.style.maxWidth = '80%';
+      errorElement.style.textAlign = 'center';
+      errorElement.innerHTML = `
+        <h3>Error Loading Map Data</h3>
+        <p>${error.message || 'Unknown error occurred'}</p>
+        <p>Please check your internet connection and try again.</p>
+      `;
+      mapElement.appendChild(errorElement);
+    } else {
+      // Fallback if map element doesn't exist yet
+      alert('Failed to load map data. Please try again later.');
+    }
   }
 }
 
@@ -335,7 +343,10 @@ function addLegend(): void {
     legendContainer.appendChild(legendItem);
   });
   
-  document.querySelector('.map')?.appendChild(legendContainer);
+  const mapElement = document.querySelector('.map') || document.getElementById('map');
+  if (mapElement) {
+    mapElement.appendChild(legendContainer);
+  }
 }
 
 // Show the popup with feature information
