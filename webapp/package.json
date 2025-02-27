@@ -1,0 +1,22 @@
+{
+  "name": "tourist-accommodations-map",
+  "version": "1.0.0",
+  "description": "Interactive web application that visualizes tourist accommodation data by census section in Spain",
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc && vite build",
+    "preview": "vite preview"
+  },
+  "keywords": ["maplibre", "gis", "tourism", "spain", "visualization"],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "maplibre-gl": "^3.6.2"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.19",
+    "typescript": "^5.3.3",
+    "vite": "^5.1.4"
+  }
+}

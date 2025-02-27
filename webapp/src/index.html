@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Tourist Accommodations Map</title>
+  <link href="styles/main.css" rel="stylesheet">
+</head>
+<body>
+  <div class="app">
+    <header class="header">
+      <h1>Tourist Accommodations by Census Section</h1>
+      <div class="controls">
+        <button id="toggle-sidebar" class="button">Filters</button>
+      </div>
+    </header>
+    
+    <main class="main">
+      <div id="map" class="map"></div>
+      
+      <aside id="sidebar" class="sidebar">
+        <div class="sidebar-content">
+          <h2>Filters</h2>
+          
+          <div class="filter-group">
+            <label for="min-accommodations">Minimum Accommodations:</label>
+            <input type="range" id="min-accommodations" min="0" max="100" value="0" step="1">
+            <span id="min-accommodations-value">0</span>
+          </div>
+          
+          <div class="filter-group">
+            <label for="max-accommodations">Maximum Accommodations:</label>
+            <input type="range" id="max-accommodations" min="0" max="500" value="500" step="10">
+            <span id="max-accommodations-value">500</span>
+          </div>
+          
+          <div class="filter-group">
+            <label for="province-select">Province:</label>
+            <select id="province-select">
+              <option value="all">All Provinces</option>
+              <!-- Will be populated dynamically -->
+            </select>
+          </div>
+          
+          <div class="filter-group">
+            <label for="municipality-select">Municipality:</label>
+            <select id="municipality-select">
+              <option value="all">All Municipalities</option>
+              <!-- Will be populated dynamically -->
+            </select>
+          </div>
+          
+          <button id="reset-filters" class="button">Reset Filters</button>
+        </div>
+      </aside>
+    </main>
+    
+    <footer class="footer">
+      <p>Data source: INE (Instituto Nacional de Estadística) - Tourist Accommodation Data 2024</p>
+    </footer>
+    
+    <div id="popup" class="popup">
+      <div class="popup-content">
+        <h3 id="popup-title">Census Section</h3>
+        <table class="popup-table">
+          <tr>
+            <td>Tourist Accommodations:</td>
+            <td id="popup-accommodations">-</td>
+          </tr>
+          <tr>
+            <td>Number of Places:</td>
+            <td id="popup-places">-</td>
+          </tr>
+          <tr>
+            <td>Percentage:</td>
+            <td id="popup-percentage">-</td>
+          </tr>
+          <tr>
+            <td>Municipality:</td>
+            <td id="popup-municipality">-</td>
+          </tr>
+          <tr>
+            <td>Province:</td>
+            <td id="popup-province">-</td>
+          </tr>
+        </table>
+      </div>
+    </div>
+  </div>
+  
+  <script type="module" src="main.ts"></script>
+</body>
+</html> 

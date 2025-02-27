@@ -1,0 +1,12 @@
+pandas==2.1.1
+geopandas==0.14.1
+matplotlib==3.8.0
+numpy==1.26.0
+openpyxl==3.1.2
+shapely==2.0.2
+pyproj==3.6.1
+fiona==1.9.5
+mapclassify==2.6.0
+tqdm==4.66.1
+colorama==0.4.6
+pyogrio==0.7.2 
