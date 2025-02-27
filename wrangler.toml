@@ -1,0 +1,19 @@
+[site]
+bucket = "./dist"
+entry-point = "dist"
+
+[site.static]
+include = ["**/*"]
+exclude = []
+
+[site.build]
+command = "npm run build"
+output_dir = "dist"
+
+[env.production]
+name = "tourist-accommodations-map-production"
+route = ""
+
+[env.staging]
+name = "tourist-accommodations-map-staging"
+route = "" 

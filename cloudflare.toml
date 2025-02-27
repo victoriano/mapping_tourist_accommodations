@@ -1,0 +1,7 @@
+[build]
+command = "cd webapp && npm install && npm run build"
+publish = "webapp/dist"
+base = "/"
+
+[build.environment]
+NODE_VERSION = "18" 
