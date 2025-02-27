@@ -3,10 +3,75 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <meta http-equiv="refresh" content="0;url=src/index.html">
   <title>Tourist Accommodations Map</title>
+  <link href="src/styles/main.css" rel="stylesheet">
 </head>
 <body>
-  <p>Redirecting to <a href="src/index.html">Tourist Accommodations Map</a>...</p>
+  <div class="app">
+    <header class="header">
+      <h1>Tourist Accommodations by Census Section</h1>
+      <div class="controls">
+        <button id="toggle-sidebar" class="button">Filters</button>
+      </div>
+    </header>
+    
+    <main class="main">
+      <div id="map" class="map"></div>
+      
+      <aside id="sidebar" class="sidebar">
+        <div class="sidebar-content">
+          <h2>Filters</h2>
+          
+          <div class="filter-group">
+            <label for="province-select">Province:</label>
+            <select id="province-select" class="select">
+              <option value="">All Provinces</option>
+            </select>
+          </div>
+          
+          <div class="filter-group">
+            <label for="municipality-select">Municipality:</label>
+            <select id="municipality-select" class="select">
+              <option value="">All Municipalities</option>
+            </select>
+          </div>
+          
+          <div class="filter-group">
+            <label>Accommodation Count:</label>
+            <div class="range-slider">
+              <input type="range" id="min-accommodations" min="0" max="100" value="0" class="slider">
+              <input type="range" id="max-accommodations" min="0" max="100" value="100" class="slider">
+              <div class="range-values">
+                <span id="min-value">0</span> - <span id="max-value">100</span>
+              </div>
+            </div>
+          </div>
+          
+          <div class="filter-actions">
+            <button id="apply-filters" class="button primary">Apply Filters</button>
+            <button id="reset-filters" class="button">Reset</button>
+          </div>
+        </div>
+      </aside>
+    </main>
+    
+    <footer class="footer">
+      <p>Data source: <a href="https://www.ine.es/experimental/viv_turistica/exp_viv_turistica_tablas.htm" target="_blank">INE - Spanish National Statistics Institute</a></p>
+    </footer>
+  </div>
+  
+  <div id="loading" class="loading">
+    <div class="spinner"></div>
+    <p>Loading data...</p>
+  </div>
+  
+  <div id="legend" class="legend">
+    <h3>Legend</h3>
+    <div class="legend-items">
+      <!-- Legend items will be added dynamically -->
+    </div>
+  </div>
+  
+  <script type="module" src="src/main.ts"></script>
 </body>
 </html> 
