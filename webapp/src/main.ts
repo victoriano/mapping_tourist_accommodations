@@ -73,6 +73,13 @@ function initializeMap(): void {
 
 // Add custom controls for navigating to specific regions of Spain
 function addRegionNavigationControls(): void {
+  // Check if map element exists first
+  const mapElement = document.querySelector('.map') || document.getElementById('map');
+  if (!mapElement) {
+    console.warn('Map element not found, skipping region navigation controls');
+    return;
+  }
+
   const controlContainer = document.createElement('div');
   controlContainer.className = 'map-region-controls';
   
@@ -81,11 +88,13 @@ function addRegionNavigationControls(): void {
   mainlandButton.className = 'region-button';
   mainlandButton.textContent = 'Mainland Spain';
   mainlandButton.addEventListener('click', () => {
-    map.flyTo({
-      center: [-3.7033, 40.4167],
-      zoom: 5,
-      duration: 1500
-    });
+    if (map) {
+      map.flyTo({
+        center: [-3.7033, 40.4167],
+        zoom: 5,
+        duration: 1500
+      });
+    }
   });
   
   // Button for Canary Islands
@@ -93,21 +102,20 @@ function addRegionNavigationControls(): void {
   canaryButton.className = 'region-button';
   canaryButton.textContent = 'Canary Islands';
   canaryButton.addEventListener('click', () => {
-    map.flyTo({
-      center: [-15.5, 28.1],
-      zoom: 7,
-      duration: 1500
-    });
+    if (map) {
+      map.flyTo({
+        center: [-15.5, 28.1],
+        zoom: 7,
+        duration: 1500
+      });
+    }
   });
   
   controlContainer.appendChild(mainlandButton);
   controlContainer.appendChild(canaryButton);
   
   // Append the control container to the map
-  const mapElement = document.querySelector('.map') || document.getElementById('map');
-  if (mapElement) {
-    mapElement.appendChild(controlContainer);
-  }
+  mapElement.appendChild(controlContainer);
 }
 
 // Load the GeoJSON data
@@ -308,12 +316,18 @@ function addDataToMap(): void {
 
 // Create and add the legend to the map
 function addLegend(): void {
-  const legendContainer = document.createElement('div');
-  legendContainer.className = 'legend';
+  const legendElement = document.getElementById('legend');
+  if (!legendElement) {
+    console.warn('Legend element not found, skipping legend creation');
+    return;
+  }
+
+  // Clear any existing content
+  legendElement.innerHTML = '';
   
   const title = document.createElement('h4');
   title.textContent = 'Tourist Accommodations';
-  legendContainer.appendChild(title);
+  legendElement.appendChild(title);
   
   const legendItems = [
     { color: '#f7fbff', label: '0' },
@@ -325,6 +339,9 @@ function addLegend(): void {
     { color: '#2171b5', label: '100-200' },
     { color: '#084594', label: '200-500' },
   ];
+  
+  const legendItemsContainer = document.createElement('div');
+  legendItemsContainer.className = 'legend-items';
   
   legendItems.forEach(item => {
     const legendItem = document.createElement('div');
@@ -340,29 +357,41 @@ function addLegend(): void {
     
     legendItem.appendChild(colorBox);
     legendItem.appendChild(label);
-    legendContainer.appendChild(legendItem);
+    legendItemsContainer.appendChild(legendItem);
   });
   
-  const mapElement = document.querySelector('.map') || document.getElementById('map');
-  if (mapElement) {
-    mapElement.appendChild(legendContainer);
-  }
+  legendElement.appendChild(legendItemsContainer);
 }
 
 // Show the popup with feature information
 function showPopup(feature: Feature, lngLat: maplibregl.LngLat): void {
   const popup = document.getElementById('popup');
-  if (!popup) return;
+  if (!popup) {
+    console.warn('Popup element not found, cannot show popup');
+    return;
+  }
   
   const props = feature.properties;
   
-  document.getElementById('popup-title')!.textContent = `Census Section: ${props.CUSEC}`;
-  document.getElementById('popup-accommodations')!.textContent = props['vivienda turistica']?.toString() || 'N/A';
-  document.getElementById('popup-places')!.textContent = props['plazas']?.toString() || 'N/A';
-  document.getElementById('popup-percentage')!.textContent = 
-    props['Porcentaje vivienda turistica'] ? `${(props['Porcentaje vivienda turistica'] * 100).toFixed(2)}%` : 'N/A';
-  document.getElementById('popup-municipality')!.textContent = props['MUN_LITERAL'] || 'N/A';
-  document.getElementById('popup-province')!.textContent = props['PROV_LITERAL'] || 'N/A';
+  // Safely set text content with null checks
+  const setElementText = (id: string, value: string) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.textContent = value;
+    } else {
+      console.warn(`Element with id ${id} not found`);
+    }
+  };
+  
+  setElementText('popup-title', `Census Section: ${props.CUSEC}`);
+  setElementText('popup-accommodations', props['vivienda turistica']?.toString() || 'N/A');
+  setElementText('popup-places', props['plazas']?.toString() || 'N/A');
+  setElementText(
+    'popup-percentage', 
+    props['Porcentaje vivienda turistica'] ? `${(props['Porcentaje vivienda turistica'] * 100).toFixed(2)}%` : 'N/A'
+  );
+  setElementText('popup-municipality', props['MUN_LITERAL'] || 'N/A');
+  setElementText('popup-province', props['PROV_LITERAL'] || 'N/A');
   
   const mapCanvas = map.getCanvas();
   const mapRect = mapCanvas.getBoundingClientRect();
@@ -411,8 +440,28 @@ function zoomToFeature(feature: Feature): void {
 
 // Populate filter dropdowns
 function populateFilters(): void {
-  // Populate province dropdown
   const provinceSelect = document.getElementById('province-select') as HTMLSelectElement;
+  if (!provinceSelect) {
+    console.warn('Province select element not found');
+    return;
+  }
+  
+  // Safely set text content with null checks
+  const setElementText = (id: string, value: string) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.textContent = value;
+    } else {
+      console.warn(`Element with id ${id} not found`);
+    }
+  };
+  
+  // Clear existing options except the first one
+  while (provinceSelect.options.length > 1) {
+    provinceSelect.remove(1);
+  }
+  
+  // Add province options
   provinces.forEach(province => {
     const option = document.createElement('option');
     option.value = province.code;
@@ -420,9 +469,9 @@ function populateFilters(): void {
     provinceSelect.appendChild(option);
   });
   
-  // Populate min/max accommodation values
-  document.getElementById('min-accommodations-value')!.textContent = currentFilters.minAccommodations.toString();
-  document.getElementById('max-accommodations-value')!.textContent = currentFilters.maxAccommodations.toString();
+  // Update slider value displays
+  setElementText('min-accommodations-value', currentFilters.minAccommodations.toString());
+  setElementText('max-accommodations-value', currentFilters.maxAccommodations.toString());
 }
 
 // Apply filters to the map
@@ -494,82 +543,155 @@ function updateMunicipalityDropdown(): void {
 
 // Setup all event listeners
 function setupEventListeners(): void {
+  // Helper function for safely setting text content
+  const setElementText = (id: string, value: string) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.textContent = value;
+    } else {
+      console.warn(`Element with id ${id} not found`);
+    }
+  };
+
   // Min accommodations slider
   const minSlider = document.getElementById('min-accommodations') as HTMLInputElement;
-  minSlider.addEventListener('input', () => {
-    const value = parseInt(minSlider.value);
-    currentFilters.minAccommodations = value;
-    document.getElementById('min-accommodations-value')!.textContent = value.toString();
-    applyFilters();
-  });
+  if (minSlider) {
+    minSlider.addEventListener('input', () => {
+      const value = parseInt(minSlider.value);
+      currentFilters.minAccommodations = value;
+      setElementText('min-accommodations-value', value.toString());
+      applyFilters();
+    });
+  } else {
+    console.warn('Min accommodations slider not found');
+  }
   
   // Max accommodations slider
   const maxSlider = document.getElementById('max-accommodations') as HTMLInputElement;
-  maxSlider.addEventListener('input', () => {
-    const value = parseInt(maxSlider.value);
-    currentFilters.maxAccommodations = value;
-    document.getElementById('max-accommodations-value')!.textContent = value.toString();
-    applyFilters();
-  });
+  if (maxSlider) {
+    maxSlider.addEventListener('input', () => {
+      const value = parseInt(maxSlider.value);
+      currentFilters.maxAccommodations = value;
+      setElementText('max-accommodations-value', value.toString());
+      applyFilters();
+    });
+  } else {
+    console.warn('Max accommodations slider not found');
+  }
   
   // Province dropdown
   const provinceSelect = document.getElementById('province-select') as HTMLSelectElement;
-  provinceSelect.addEventListener('change', () => {
-    currentFilters.province = provinceSelect.value;
-    updateMunicipalityDropdown();
-    applyFilters();
-  });
+  if (provinceSelect) {
+    provinceSelect.addEventListener('change', () => {
+      currentFilters.province = provinceSelect.value;
+      updateMunicipalityDropdown();
+      applyFilters();
+    });
+  } else {
+    console.warn('Province select not found');
+  }
   
   // Municipality dropdown
   const municipalitySelect = document.getElementById('municipality-select') as HTMLSelectElement;
-  municipalitySelect.addEventListener('change', () => {
-    currentFilters.municipality = municipalitySelect.value;
-    applyFilters();
-  });
+  if (municipalitySelect) {
+    municipalitySelect.addEventListener('change', () => {
+      currentFilters.municipality = municipalitySelect.value;
+      applyFilters();
+    });
+  } else {
+    console.warn('Municipality select not found');
+  }
   
-  // Reset filters button
+  // Reset button
   const resetButton = document.getElementById('reset-filters');
-  resetButton?.addEventListener('click', () => {
-    // Reset filters to default values
-    currentFilters = {
-      minAccommodations: 0,
-      maxAccommodations: 500,
-      province: 'all',
-      municipality: 'all'
-    };
-    
-    // Reset UI elements
-    minSlider.value = '0';
-    maxSlider.value = '500';
-    provinceSelect.value = 'all';
-    municipalitySelect.value = 'all';
-    document.getElementById('min-accommodations-value')!.textContent = '0';
-    document.getElementById('max-accommodations-value')!.textContent = '500';
-    
-    // Update dropdown and apply filters
-    updateMunicipalityDropdown();
-    applyFilters();
-    
-    // Reset map view
+  if (resetButton) {
+    resetButton.addEventListener('click', () => {
+      resetFilters();
+      applyFilters();
+    });
+  } else {
+    console.warn('Reset filters button not found');
+  }
+}
+
+// Reset all filters to default values
+function resetFilters(): void {
+  currentFilters = {
+    minAccommodations: 0,
+    maxAccommodations: 500,
+    province: 'all',
+    municipality: 'all'
+  };
+  
+  // Helper function for safely setting text content
+  const setElementText = (id: string, value: string) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.textContent = value;
+    } else {
+      console.warn(`Element with id ${id} not found`);
+    }
+  };
+  
+  // Reset UI elements
+  const minSlider = document.getElementById('min-accommodations') as HTMLInputElement;
+  if (minSlider) minSlider.value = '0';
+  
+  const maxSlider = document.getElementById('max-accommodations') as HTMLInputElement;
+  if (maxSlider) maxSlider.value = '500';
+  
+  setElementText('min-accommodations-value', '0');
+  setElementText('max-accommodations-value', '500');
+  
+  const provinceSelect = document.getElementById('province-select') as HTMLSelectElement;
+  if (provinceSelect) provinceSelect.value = 'all';
+  
+  const municipalitySelect = document.getElementById('municipality-select') as HTMLSelectElement;
+  if (municipalitySelect) municipalitySelect.value = 'all';
+  
+  updateMunicipalityDropdown();
+  
+  // Reset map view
+  if (map) {
     map.flyTo({
       center: [DEFAULT_LOCATION.lng, DEFAULT_LOCATION.lat],
       zoom: DEFAULT_LOCATION.zoom,
       duration: 1000
     });
-  });
-  
-  // Toggle sidebar button
+  }
+}
+
+// Setup toggle sidebar functionality
+function setupToggleSidebar(): void {
   const toggleButton = document.getElementById('toggle-sidebar');
   const sidebar = document.getElementById('sidebar');
-  toggleButton?.addEventListener('click', () => {
-    sidebar?.classList.toggle('open');
-  });
+  
+  if (toggleButton && sidebar) {
+    toggleButton.addEventListener('click', () => {
+      sidebar.classList.toggle('open');
+    });
+  } else {
+    console.warn('Toggle sidebar elements not found');
+  }
 }
 
 // Initialize the application
+async function initialize(): Promise<void> {
+  try {
+    // Load configuration
+    await loadConfig();
+    
+    // Initialize map
+    initializeMap();
+    
+    // Setup toggle sidebar
+    setupToggleSidebar();
+  } catch (error) {
+    console.error('Error initializing application:', error);
+  }
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
-  // First load config to get the data URL
-  await loadConfig();
-  // Then initialize the map
-  initializeMap();
+  // Initialize the application using the centralized initialize function
+  await initialize();
 }); 
