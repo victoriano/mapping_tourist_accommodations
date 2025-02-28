@@ -6,7 +6,9 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "preview": "vite preview"
+    "build:deploy": "npm run build && rm -f dist/data/output/secciones_with_shapes.geojson",
+    "preview": "vite preview",
+    "deploy": "npm run build:deploy && npx wrangler pages deploy dist --project-name=mapping-tourist-accommodations"
   },
   "keywords": ["maplibre", "gis", "tourism", "spain", "visualization"],
   "author": "",
