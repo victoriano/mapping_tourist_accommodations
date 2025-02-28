@@ -92,16 +92,21 @@ For direct, manual deployments:
    npm run build
    ```
 
-   Note: The project's Vite configuration (`webapp/vite.config.ts`) is already set up to exclude large GeoJSON files from the build output. This prevents files like `secciones_with_shapes.geojson` from being included in the deployed application, as they exceed Cloudflare's 25MB file size limit.
+4. Remove large GeoJSON files that exceed Cloudflare's 25MB limit:
+   ```bash
+   rm -f dist/data/output/secciones_with_shapes.geojson
+   ```
 
-4. Create a minimal `wrangler.toml` file in your webapp directory:
+   Note: Cloudflare Pages has a 25MB file size limit. For production deployments, consider using Cloudflare R2 storage for large data files as described in the "Cloudflare R2 Integration" section below.
+
+5. Create a minimal `wrangler.toml` file in your webapp directory:
    ```toml
    # Cloudflare Pages configuration
    name = "mapping-tourist-accommodations"
    pages_build_output_dir = "dist"
    ```
 
-5. Deploy to Cloudflare Pages:
+6. Deploy to Cloudflare Pages:
    ```bash
    npx wrangler pages deploy dist --project-name=mapping-tourist-accommodations
    ```
@@ -118,7 +123,7 @@ For continuous deployment:
    - Go to Pages > Create a project
    - Select "Connect to Git"
    - Select your repository
-   - Set the build command to `cd webapp && npm install && npm run build`
+   - Set the build command to `cd webapp && npm install && npm run build && rm -f dist/data/output/secciones_with_shapes.geojson`
    - Set the build output directory to `webapp/dist`
    - Add a build environment variable `NODE_VERSION` with value `16` (or your preferred version)
 
@@ -148,6 +153,9 @@ For continuous deployment:
            run: |
              cd webapp
              npm run build
+         - name: Remove large files
+           run: |
+             rm -f webapp/dist/data/output/secciones_with_shapes.geojson
          - name: Deploy to Cloudflare Pages
            uses: cloudflare/wrangler-action@v3
            with:

@@ -41,7 +41,4 @@ export default defineConfig({
       '@': resolve(__dirname, 'src'),
     },
   },
-  
-  // Exclude large GeoJSON files from the build output
-  assetsInclude: ['**/*.html', '**/*.css', '**/*.js', '**/*.png', '**/*.svg', '**/*.json', '!**/secciones_with_shapes.geojson'],
 }); 
