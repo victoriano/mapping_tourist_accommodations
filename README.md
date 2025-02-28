@@ -68,6 +68,95 @@ npm run preview
 
 The application should now be available at http://localhost:3000/
 
+## Deploying to Cloudflare Pages
+
+There are two primary ways to deploy this application to Cloudflare Pages:
+
+### 1. Using Wrangler CLI (Command Line)
+
+For direct, manual deployments:
+
+1. Install Wrangler if you haven't already:
+   ```bash
+   npm install -g wrangler
+   ```
+
+2. Log in to your Cloudflare account:
+   ```bash
+   wrangler login
+   ```
+
+3. Build the application:
+   ```bash
+   cd webapp
+   npm run build
+   ```
+
+   Note: The project's Vite configuration (`webapp/vite.config.ts`) is already set up to exclude large GeoJSON files from the build output. This prevents files like `secciones_with_shapes.geojson` from being included in the deployed application, as they exceed Cloudflare's 25MB file size limit.
+
+4. Create a minimal `wrangler.toml` file in your webapp directory:
+   ```toml
+   # Cloudflare Pages configuration
+   name = "mapping-tourist-accommodations"
+   pages_build_output_dir = "dist"
+   ```
+
+5. Deploy to Cloudflare Pages:
+   ```bash
+   npx wrangler pages deploy dist --project-name=mapping-tourist-accommodations
+   ```
+
+Your site will be deployed to `mapping-tourist-accommodations.pages.dev` and will also have a unique URL with a hash prefix (e.g., `cbdd917d.mapping-tourist-accommodations.pages.dev`).
+
+### 2. Using GitHub Integration (Recommended for Production)
+
+For continuous deployment:
+
+1. Push your code to a GitHub repository.
+
+2. In the Cloudflare dashboard:
+   - Go to Pages > Create a project
+   - Select "Connect to Git"
+   - Select your repository
+   - Set the build command to `cd webapp && npm install && npm run build`
+   - Set the build output directory to `webapp/dist`
+   - Add a build environment variable `NODE_VERSION` with value `16` (or your preferred version)
+
+3. Deploy with the "Save and Deploy" button.
+
+4. For a completely automated solution, create a `.github/workflows/cloudflare-pages.yml` file in your repository:
+   ```yaml
+   name: Deploy to Cloudflare Pages
+
+   on:
+     push:
+       branches: [main]
+
+   jobs:
+     deploy:
+       runs-on: ubuntu-latest
+       steps:
+         - uses: actions/checkout@v2
+         - uses: actions/setup-node@v2
+           with:
+             node-version: '16'
+         - name: Install dependencies
+           run: |
+             cd webapp
+             npm install
+         - name: Build application
+           run: |
+             cd webapp
+             npm run build
+         - name: Deploy to Cloudflare Pages
+           uses: cloudflare/wrangler-action@v3
+           with:
+             apiToken: ${{ secrets.CF_API_TOKEN }}
+             command: pages deploy webapp/dist --project-name=mapping-tourist-accommodations
+   ```
+
+With GitHub integration, any push to the main branch will trigger an automatic deployment to Cloudflare Pages.
+
 ## Cloudflare R2 Integration (Optional)
 
 For production deployments, we recommend storing the GeoJSON data in Cloudflare R2 instead of including it in the repository. This allows for:
