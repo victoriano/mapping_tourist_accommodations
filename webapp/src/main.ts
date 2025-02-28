@@ -307,6 +307,7 @@ function addDataToMap(): void {
     if (e.features && e.features.length > 0) {
       const feature = e.features[0] as unknown as Feature;
       zoomToFeature(feature);
+      showFeatureModal(feature);
     }
   });
 
@@ -675,9 +676,129 @@ function setupToggleSidebar(): void {
   }
 }
 
+// Show the feature detail modal with all properties
+function showFeatureModal(feature: Feature): void {
+  const modal = document.getElementById('feature-modal');
+  const modalTitle = document.getElementById('feature-modal-title');
+  const modalProperties = document.getElementById('feature-modal-properties');
+  const closeBtn = document.getElementById('feature-modal-close');
+  
+  if (!modal || !modalTitle || !modalProperties || !closeBtn) {
+    console.warn('Modal elements not found in the DOM');
+    return;
+  }
+  
+  // Set the title
+  const sectionId = feature.properties.CUSEC || 'Unknown Section';
+  modalTitle.textContent = `Census Section: ${sectionId}`;
+  
+  // Clear existing properties
+  modalProperties.innerHTML = '';
+  
+  // Add all properties to the modal
+  const properties = feature.properties;
+  Object.keys(properties).sort().forEach(key => {
+    // Create property container
+    const propertyRow = document.createElement('div');
+    propertyRow.classList.add('feature-property-row');
+    
+    // Create label
+    const label = document.createElement('div');
+    label.classList.add('feature-property-label');
+    label.textContent = formatPropertyLabel(key);
+    
+    // Create value
+    const value = document.createElement('div');
+    value.classList.add('feature-property-value');
+    
+    // Format value based on type
+    const propValue = (properties as any)[key];
+    if (propValue === null || propValue === undefined) {
+      value.textContent = 'N/A';
+    } else if (typeof propValue === 'number') {
+      // Format percentages specially
+      if (key.toLowerCase().includes('porcentaje')) {
+        value.textContent = `${(propValue * 100).toFixed(2)}%`;
+      } else {
+        value.textContent = propValue.toString();
+      }
+    } else {
+      value.textContent = propValue.toString();
+    }
+    
+    // Add label and value to the row
+    propertyRow.appendChild(label);
+    propertyRow.appendChild(value);
+    
+    // Add row to the properties container
+    modalProperties.appendChild(propertyRow);
+  });
+  
+  // Show the modal
+  modal.style.display = 'block';
+  
+  // Add event listener to close button
+  closeBtn.onclick = () => {
+    hideFeatureModal();
+  };
+  
+  // Close when clicking outside the modal content
+  window.onclick = (event) => {
+    if (event.target === modal) {
+      hideFeatureModal();
+    }
+  };
+  
+  // Close on Escape key
+  document.addEventListener('keydown', handleEscKey);
+}
+
+// Hide the feature detail modal
+function hideFeatureModal(): void {
+  const modal = document.getElementById('feature-modal');
+  if (modal) {
+    modal.style.display = 'none';
+  }
+  
+  // Remove event listener
+  document.removeEventListener('keydown', handleEscKey);
+}
+
+// Handle Escape key for modal
+function handleEscKey(event: KeyboardEvent): void {
+  if (event.key === 'Escape') {
+    hideFeatureModal();
+  }
+}
+
+// Format property label for better readability
+function formatPropertyLabel(label: string): string {
+  // Special cases
+  if (label === 'vivienda turistica') return 'Tourist Accommodations';
+  if (label === 'plazas') return 'Places';
+  if (label === 'plazas por vivienda turistica') return 'Places per Accommodation';
+  if (label === 'Porcentaje vivienda turistica') return 'Percentage of Tourist Accommodations';
+  if (label === 'MUN_LITERAL') return 'Municipality';
+  if (label === 'PROV_LITERAL') return 'Province';
+  
+  // General formatting
+  return label
+    // Add spaces before capital letters
+    .replace(/([A-Z])/g, ' $1')
+    // Replace underscores with spaces
+    .replace(/_/g, ' ')
+    // Capitalize first letter
+    .replace(/^./, str => str.toUpperCase())
+    // Trim extra spaces
+    .trim();
+}
+
 // Initialize the application
 async function initialize(): Promise<void> {
   try {
+    // Make sure all necessary DOM elements exist
+    ensureDOMElementsExist();
+    
     // Load configuration
     await loadConfig();
     
@@ -689,6 +810,99 @@ async function initialize(): Promise<void> {
   } catch (error) {
     console.error('Error initializing application:', error);
   }
+}
+
+// Verify that all necessary DOM elements exist
+function ensureDOMElementsExist(): void {
+  const requiredElements = [
+    'map',
+    'popup',
+    'feature-modal',
+    'feature-modal-title',
+    'feature-modal-properties',
+    'feature-modal-close'
+  ];
+  
+  const missingElements = requiredElements.filter(id => !document.getElementById(id));
+  if (missingElements.length > 0) {
+    console.error('Missing DOM elements:', missingElements.join(', '));
+    
+    // For popup and modal elements, create them if missing
+    if (!document.getElementById('popup')) {
+      createPopupElement();
+    }
+    
+    if (!document.getElementById('feature-modal')) {
+      createModalElement();
+    }
+  }
+}
+
+// Create the popup element if it doesn't exist
+function createPopupElement(): void {
+  const popup = document.createElement('div');
+  popup.id = 'popup';
+  popup.className = 'popup';
+  
+  const popupContent = document.createElement('div');
+  popupContent.className = 'popup-content';
+  
+  const title = document.createElement('h3');
+  title.id = 'popup-title';
+  title.textContent = 'Census Section';
+  
+  const table = document.createElement('table');
+  table.className = 'popup-table';
+  
+  // Create table rows
+  const createRow = (label: string, valueId: string) => {
+    const tr = document.createElement('tr');
+    const tdLabel = document.createElement('td');
+    tdLabel.textContent = label;
+    const tdValue = document.createElement('td');
+    tdValue.id = valueId;
+    tdValue.textContent = '-';
+    tr.appendChild(tdLabel);
+    tr.appendChild(tdValue);
+    return tr;
+  };
+  
+  table.appendChild(createRow('Tourist Accommodations:', 'popup-accommodations'));
+  table.appendChild(createRow('Number of Places:', 'popup-places'));
+  table.appendChild(createRow('Percentage:', 'popup-percentage'));
+  table.appendChild(createRow('Municipality:', 'popup-municipality'));
+  table.appendChild(createRow('Province:', 'popup-province'));
+  
+  popupContent.appendChild(title);
+  popupContent.appendChild(table);
+  popup.appendChild(popupContent);
+  
+  document.body.appendChild(popup);
+  console.log('Created missing popup element');
+}
+
+// Create the modal element if it doesn't exist
+function createModalElement(): void {
+  const modal = document.createElement('div');
+  modal.id = 'feature-modal';
+  modal.className = 'feature-modal';
+  
+  modal.innerHTML = `
+    <div class="feature-modal-content">
+      <div class="feature-modal-header">
+        <h3 id="feature-modal-title">Census Section Details</h3>
+        <button id="feature-modal-close" class="feature-modal-close">&times;</button>
+      </div>
+      <div class="feature-modal-body">
+        <div id="feature-modal-properties" class="feature-modal-properties">
+          <!-- Properties will be populated dynamically -->
+        </div>
+      </div>
+    </div>
+  `;
+  
+  document.body.appendChild(modal);
+  console.log('Created missing modal element');
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
